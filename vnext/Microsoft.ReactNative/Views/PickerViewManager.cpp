@@ -148,6 +148,7 @@ void PickerShadowNode::RepopulateItems() {
 
   auto comboBoxItems = combobox.Items();
   comboBoxItems.Clear();
+  auto didSetIslandsDarkModeFix = false;
   for (const auto &item : m_items) {
     if (!item["label"].IsNull()) {
       std::string label = item["label"].AsString();
@@ -158,6 +159,18 @@ void PickerShadowNode::RepopulateItems() {
       if (!item["textColor"].IsNull() && react::uwp::IsValidColorValue(item["textColor"]))
         comboboxItem.Foreground(react::uwp::BrushFrom(item["textColor"]));
 
+	
+      if (!didSetIslandsDarkModeFix) {
+        // Xaml Islands has a bug where a ComboBox that is dark mode won't set its dropdown to dark mode.
+        didSetIslandsDarkModeFix = true;
+        comboboxItem.Loaded([=](auto, auto) {
+          winrt::FrameworkElement parent = comboboxItem;
+          while (parent = parent.Parent().as<winrt::FrameworkElement>()) {
+            parent.RequestedTheme(combobox.ActualTheme());
+          }
+        });
+      }
+      
       comboBoxItems.Append(comboboxItem);
     }
   }
